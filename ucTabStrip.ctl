@@ -115,8 +115,6 @@ End Type
 
 Private Tabs() As TabItem
 
-Private Const ICON_SPACE_W As Long = 18
-Private Const TAB_H As Long = 26
 Private Const BTTN_W As Long = 20
 
 Private mPositions As Collection 'the current positions of the tabs: e.g. if mPositions(3) = 5, then Tabs(5) is in position 3 (from L to R)
@@ -144,6 +142,12 @@ Private mButtonWidth As Long 'can be BTTN_W or 0 (0 when the buttons aren't need
 Event TabRightClick(ByVal TabKey As String)
 Event TabClick(ByVal TabKey As String, ByVal WasAlreadyActive As Boolean)
 Event TabCloseClick(ByVal TabKey As String, ByRef Cancel As Boolean)
+Private Property Get TAB_H() As Long
+   TAB_H = UserControl.ScaleHeight
+End Property
+Private Property Get ICON_SPACE_W() As Long
+   ICON_SPACE_W = IIf(TAB_H < 32, 16, 32) + 2
+End Property
 Public Property Let LockUpdate(TrueFalse As Boolean)
    mLockUpdate = TrueFalse
    If Not mLockUpdate Then Init
@@ -190,7 +194,7 @@ Public Sub AddTab(ByVal pCaption As String, ByVal pKey As String, Optional pIcon
    Tabs(pPosition).Caption = pCaption
    Tabs(pPosition).Key = pKey
    UserControl.FontBold = False
-   Tabs(pPosition).Width = UserControl.TextWidth(pCaption) + ICON_SPACE_W + 12
+   Tabs(pPosition).Width = UserControl.TextWidth(pCaption) + ICON_SPACE_W + 12 + 14
    Tabs(pPosition).IconHandle = pIconHandle
    mPositions.Add pPosition, pKey
    mTotalTabsW = mTotalTabsW + Tabs(pPosition).Width
@@ -203,7 +207,7 @@ Dim Idx As Long
    
    Idx = mPositions(pKey)
    Tabs(Idx).Caption = pCaption
-   Tabs(Idx).Width = UserControl.TextWidth(pCaption) + ICON_SPACE_W + 12
+   Tabs(Idx).Width = UserControl.TextWidth(pCaption) + ICON_SPACE_W + 12 + 14
    Init
 End Sub
 Public Sub RemoveTab(ByVal Key As String, Optional NewActiveTabKey As String) 'when called from 'outside', this is always silent (i.e. no event raised)
@@ -476,7 +480,6 @@ Dim Key As String, Cancel As Boolean, prevIndex As Long
          RaiseEvent TabRightClick(Key)
       End If
    End If
-
 End Sub
 Private Sub UserControl_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
    If Button = vbLeftButton And mMouseOverTabIndex > 0 Then mMouseDownX = mViewportX + x
@@ -549,6 +552,7 @@ End Sub
 Private Sub UserControl_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
    mMouseDownX = -1
    mMouseUpButton = Button
+   UserControl_MouseMove 0, Shift, x, y
    
    If Button <> vbLeftButton Then Exit Sub
    
@@ -583,9 +587,9 @@ Dim R As RECT
 
    With Tabs(mMouseOverTabIndex)
       R.Left = .x + .Width - 19
-      R.Top = 6
+      R.Top = 3
       R.Right = R.Left + 13
-      R.Bottom = TAB_H
+      R.Bottom = TAB_H - 3
    End With
    CloseButtonHitTest = CBool(PtInRect(R, x, y))
 
@@ -624,7 +628,7 @@ Dim i As Long
    End With
 End Sub
 Private Sub DrawTab(thisTab As TabItem, IsActiveTab As Boolean, HasMouseOver As Boolean, IsDraggedTab As Boolean, IsOverCloseButton As Boolean)
-Dim R As RECT, clr As Long
+Dim R As RECT, clr As Long, lSize As Long
    'the whole drawing thing could be made a lot nicer with GDI, but this is fine, for now
    R.Left = thisTab.x - mViewportX + mButtonWidth + 2
    R.Top = 3
@@ -650,16 +654,20 @@ Dim R As RECT, clr As Long
          .DrawWidth = 2
          .ForeColor = IIf(IsOverCloseButton, vbRed, RGB(160, 160, 160))
          .FillColor = IIf(IsOverCloseButton, vbRed, RGB(160, 160, 160))
-         Rectangle .hdc, R.Right - 15, R.Top + 5, R.Right - 4, R.Bottom - 4
+         lSize = R.Top + (R.Bottom - R.Top) \ 2 - 14
+         Rectangle .hdc, R.Right - 15, lSize + 7, R.Right - 4, lSize + 20
          
          .ForeColor = vbWhite
-         MoveToEx .hdc, R.Right - 14, 9, 0&
-         LineTo .hdc, R.Right - 7, TAB_H - 10
-         MoveToEx .hdc, R.Right - 14, TAB_H - 10, 0&
-         LineTo .hdc, R.Right - 7, 9
+         MoveToEx .hdc, R.Right - 14, lSize + 9, 0&
+         LineTo .hdc, R.Right - 7, lSize + 16
+         MoveToEx .hdc, R.Right - 14, lSize + 16, 0&
+         LineTo .hdc, R.Right - 7, lSize + 9
       End If
       
-      If thisTab.IconHandle <> 0 Then DrawIconEx .hdc, R.Left + 2, 5, thisTab.IconHandle, 16, 16, 0, 0, DI_NORMAL
+      If thisTab.IconHandle <> 0 Then
+         lSize = IIf(TAB_H < 32, 16, 32)
+         DrawIconEx .hdc, R.Left + 2, (TAB_H - lSize) \ 2, thisTab.IconHandle, lSize, lSize, 0, 0, DI_NORMAL
+      End If
       
       .ForeColor = vbBlack
       R.Left = R.Left + ICON_SPACE_W + 2
@@ -748,8 +756,7 @@ Private Sub UserControl_Initialize()
    lblScroll(1).BorderStyle = 0: lblScroll(2).BorderStyle = 0
    mMouseDownX = -1
    UserControl.FillStyle = 0
-   UserControl.Font = "Tahoma"
-   UserControl.FontSize = 8
+   Set UserControl.Font = SystemIconFont
    Set mPositions = New Collection
    ReDim Tabs(0)
 End Sub

@@ -212,7 +212,7 @@ Private Sub mWindowWatcher_BulkChangeComplete()
    ucTabStrip.LockUpdate = False
 End Sub
 Private Sub mWindowWatcher_MDIWindowSizeChanged(ByVal NewX As Long, ByVal NewW As Long)
-   ucTabStrip.Move NewX, 1, NewW, TOOLBAR_HEIGHT
+   ucTabStrip.Move NewX, 1, NewW, gToolbarHeight
    If gLogging Then Log "Move Toolbar to x=" & NewX & ", w=" & NewW
 End Sub
 Private Sub mWindowWatcher_ActiveWindowChanged(ByVal NewActivehWnd As Long)

@@ -144,7 +144,9 @@ Dim i As Long
    On Error GoTo CreateToolbar_Error
 
    DeleteToolBar
-   gVBInstance.CommandBars.Add TOOLBARNAME, msoBarTop, , True
+   With gVBInstance.CommandBars.Add(TOOLBARNAME, msoBarTop, , True)
+      gToolbarHeight = .Height
+   End With
 
    For i = 0 To Screen.Width / Screen.TwipsPerPixelX / 550
       AddButton '- the idea is to add as many of these as is necessary to make the toolbar a full screen width. Big kludge!
@@ -153,7 +155,7 @@ Dim i As Long
    With gVBInstance.CommandBars(TOOLBARNAME)
       .Visible = True
       .Protection = msoBarNoMove
-      .Height = TOOLBAR_HEIGHT
+      .Height = gToolbarHeight
    End With
 
    On Error GoTo 0
@@ -170,7 +172,7 @@ End Sub
 Private Sub AddButton()
    On Error GoTo ErrHandler
    With gVBInstance.CommandBars(TOOLBARNAME).Controls.Add
-      .Height = TOOLBAR_HEIGHT - 2 'seems to add 2 border pixels
+      .Height = gToolbarHeight - 2 'seems to add 2 border pixels
       .Style = msoButtonCaption
       .Width = 550 'appears to be the max
       .Enabled = False
